@@ -3,7 +3,7 @@ function getRandValue(min, max) {
 }
 
 document.addEventListener("DOMContentLoaded", function(e){
-    var wellDoneTxtElt = document.getElementById("wellDoneText");
+    var wellDoneTxtElt = document.getElementById("wellDoneText"); // 'Elt' for 'element'
     var disksTxtElt = document.getElementById("disksText");
     var canvas = document.getElementById("myCanvas");
     var ctx = canvas.getContext('2d');
@@ -36,7 +36,6 @@ document.addEventListener("DOMContentLoaded", function(e){
             // vertical rod
             ctx.fillRect(rodsBasePos[i].xm, rodsBasePos[i].y-rodHeight, rodWidth, rodHeight)
         }
-
     }
 
     var nDisks = 3;
@@ -54,24 +53,77 @@ document.addEventListener("DOMContentLoaded", function(e){
     var moves = 0
 
     // while animating
-    var isAnimating = false
+    var isAnimating = false;
     var animTime = 1000; // (ms) animation time for each move 
     var animStartTime = null; // starting time of current animation 
-    var animRod = null;  // the rod to which the current animating disk belongs to 
+    var animSrcRod = null;  // the rod to which the current animating disk belongs to 
     var animDiskVal = null; // current animating disk value
     var animDiskPos = null; // current animating disk position
-    var animDiskSrcPos = null; // current animating disk's source position (before moving) - needed to calculate current position using linear equation
-    var animDiskDestPos = null; // current animating disk's target position
+    var animDestRod = null; // current animating disk's destination rod
+    var animDiskSrcPos = null; // source position of current animating disk
+    var animDiskDestPos = null; // desination position of current animating disk
 
     function nullifyAnimAtributes() {
         isAnimating = false;
         animStartTime = null;
-        animRod = null;
+        animSrcRod = null;
         animDiskVal = null;
         animDiskPos = null;
+        animDestRod = null;
         animDiskSrcPos = null;
         animDiskDestPos = null;
     }
+
+    function createNewAnimation(srcRod, destRod) { // move from srcRod to destRod
+        if (rods[srcRod].length==0) {
+            console.log("Source rod len 0. Error 23423");
+            return;
+        }
+        if (rods[destRod].length!=0 && rods[srcRod].at(-1)>rods[destRod].at(-1)) {
+            console.log("Can't place it. Error 2342");
+            return;
+        }
+        isAnimating = true;
+        animStartTime = Date.now();
+        animSrcRod = srcRod;
+        animDestRod = destRod;
+        animDiskVal = rods[animSrcRod].at(-1);
+
+        animDiskPos = {x: rodsBasePos[animSrcRod].xm-animDiskVal*diskLen, 
+            y: rodsBasePos[animSrcRod].y-rods[animSrcRod].length*diskWidth
+        };
+        
+        animDiskSrcPos = {x: rodsBasePos[animSrcRod].xm - rods[animSrcRod].at(-1)*diskLen, 
+                            y: rodsBasePos[animSrcRod].y - (rods[animSrcRod].length)*diskWidth
+        };
+        
+        animDiskDestPos = {x: rodsBasePos[animDestRod].xm - rods[animSrcRod].at(-1)*diskLen,
+                            y: rodsBasePos[animDestRod].y - (rods[animDestRod].length+1)*diskWidth
+        };
+    }
+
+    // solving
+    var isSolving = false;
+    var solveStack = []; // contains the moves to be made to solve the hanoi, 
+    // each element is array - [srcRod, destRod] specifying the move
+
+    function setupSolveHanoi() {
+        resetGame();
+        isSolving = true;
+        solveStack.length = 0; 
+        function generateSolveStack(n, srcRod, auxRod, destRod) {
+            if (n===0) return;
+            // since we have to generate the move *stack*, we generate it in the reverse order (reverse to the actual soluiton order)
+            generateSolveStack(n-1, auxRod, srcRod, destRod);
+            solveStack.push([srcRod, destRod]);
+            generateSolveStack(n-1, srcRod, destRod, auxRod);
+        }
+        generateSolveStack(nDisks, 0, 1, 2);
+        console.log(solveStack);
+        var move = solveStack.pop();
+        createNewAnimation(move[0], move[1]);
+    }
+    document.getElementById("solveButton").onclick = setupSolveHanoi;
 
     const colors = ['red', 'blue', 'orange', 'yellow']
     function drawDisks() {
@@ -79,8 +131,8 @@ document.addEventListener("DOMContentLoaded", function(e){
             const rod = rods[j];
             var mid = rodsBasePos[j].xm; // x coord of left side of first vertical rod
 
-            var len = rod.length - (j==heldRod || j==animRod); // if a disk is held, it should should be drawn at mouse position
-            // if a disk is held, it will be the top of the rod, so we ignore that rod. same log if the disk is begin animated(while solving)
+            var len = rod.length - (j==heldRod || j==animSrcRod); // if a disk is held, it should should be drawn at mouse position
+            // if a disk is held, it will be the top of the rod, so we ignore that rod. same logic if the disk is begin animated(while solving)
             for (i=0; i<len; i++) {
                 ctx.fillStyle = colors[(rod[i]-1)%colors.length];
                 ctx.fillRect(mid-rod[i]*diskLen, rodsBasePos[j].y-(i+1)*diskWidth, rod[i]*diskLen*2+rodWidth, diskWidth)
@@ -93,7 +145,7 @@ document.addEventListener("DOMContentLoaded", function(e){
             ctx.fillRect(heldRodPos.x, heldRodPos.y, heldDiskTotLen, diskWidth);
         }
         // for animating block (while solving)
-        else if (animRod != null) {
+        else if (animSrcRod != null) {
             var animDiskTotLen = animDiskVal*2*diskLen+rodWidth; // total disk length of the anim disk
             ctx.fillStyle = colors[(animDiskVal-1)%colors.length];
             ctx.fillRect(animDiskPos.x, animDiskPos.y, animDiskTotLen, diskWidth);
@@ -108,16 +160,24 @@ document.addEventListener("DOMContentLoaded", function(e){
         clearCanvas();
         drawRods();
         if (isAnimating) {
+
             animDiskPos.x = animDiskSrcPos.x + (animDiskDestPos.x - animDiskSrcPos.x)*(Date.now()-animStartTime)/animTime;
             animDiskPos.y = animDiskSrcPos.y + (animDiskDestPos.y - animDiskSrcPos.y)*(Date.now()-animStartTime)/animTime;
 
             if (Date.now()-animStartTime>animTime) {
                 animDiskPos.x = animDiskDestPos.x;
                 animDiskPos.y = animDiskDestPos.y;
-                rods[1].push(rods[0].pop());
-                nullifyAnimAtributes();
+                rods[animDestRod].push(rods[animSrcRod].pop());
+                if (solveStack.length>0) {
+                    var move = solveStack.pop();
+                    console.log(move);
+                    createNewAnimation(move[0], move[1]);
+                }
+                else {
+                    isSolving = false;
+                    nullifyAnimAtributes();
+                }
             }
-            console.log(animDiskPos);
         }
         drawDisks();
         requestAnimationFrame(canvasMainLoop);
@@ -149,6 +209,8 @@ document.addEventListener("DOMContentLoaded", function(e){
         wellDoneTxtElt.innerText = " ";
 
         nullifyAnimAtributes();
+
+        isSolving = false;
     }
     document.getElementById("resetButton").onclick = resetGame;
 
@@ -194,7 +256,7 @@ document.addEventListener("DOMContentLoaded", function(e){
         if (isAnimating) return;
         var mx = e.clientX - canvas.getBoundingClientRect().left;
         var my = e.clientY - canvas.getBoundingClientRect().top;
-        console.log(mx, my);
+        // console.log(mx, my);
         for (var i=0; i<rods.length; i++) {
             const rod = rods[i];
             if (isPointInRect(mx, my,
@@ -242,17 +304,7 @@ document.addEventListener("DOMContentLoaded", function(e){
 
     document.addEventListener("keydown", function(e){
         if (e.key === "Enter") {
-            debugger;
-            isAnimating = true;
-            animStartTime = Date.now();
-            animRod = 0;
-            animDiskVal = rods[animRod].at(-1);
-            animDiskSrcPos = {x: rodsBasePos[animRod].xm-animDiskVal*diskLen, 
-                            y: rodsBasePos[animRod].y-rods[0].length*diskWidth };
-            animDiskPos = {x: rodsBasePos[animRod].xm-animDiskVal*diskLen, 
-                            y: rodsBasePos[animRod].y-rods[0].length*diskWidth };
-            animDiskDestPos = {x: rodsBasePos[1].xm -animDiskVal*diskLen,
-                            y: rodsBasePos[1].y-diskWidth};
+            setupSolveHanoi();
         }
     })
 })

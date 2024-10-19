@@ -32,6 +32,12 @@ button {
     width: 50px;
 }
 
+#solveButton {
+    top: 15px;
+    right: 75px;
+    width: 50px;
+}
+
 #disksText {
     position: absolute;
     color: #77CDFF;
