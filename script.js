@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", function(e){
     var canvas = document.getElementById("myCanvas");
     var ctx = canvas.getContext('2d');
 
+    // rod atributes
     const rodBaseLen = 160;
     const rodsGap = 20;
     const rodWidth = 15;
@@ -45,13 +46,32 @@ document.addEventListener("DOMContentLoaded", function(e){
     var rod3 = []
     const rods = [rod1, rod2, rod3]
 
-    // when you click and hold
+    // when you click and hold a disk
     var heldRod = null;
     var heldDiskVal = null; // value of disk - 1 5 2 .. (length)
     var heldRodPos = null; 
 
     var moves = 0
 
+    // while animating
+    var isAnimating = false
+    var animTime = 1000; // (ms) animation time for each move 
+    var animStartTime = null; // starting time of current animation 
+    var animRod = null;  // the rod to which the current animating disk belongs to 
+    var animDiskVal = null; // current animating disk value
+    var animDiskPos = null; // current animating disk position
+    var animDiskSrcPos = null; // current animating disk's source position (before moving) - needed to calculate current position using linear equation
+    var animDiskDestPos = null; // current animating disk's target position
+
+    function nullifyAnimAtributes() {
+        isAnimating = false;
+        animStartTime = null;
+        animRod = null;
+        animDiskVal = null;
+        animDiskPos = null;
+        animDiskSrcPos = null;
+        animDiskDestPos = null;
+    }
 
     const colors = ['red', 'blue', 'orange', 'yellow']
     function drawDisks() {
@@ -59,17 +79,24 @@ document.addEventListener("DOMContentLoaded", function(e){
             const rod = rods[j];
             var mid = rodsBasePos[j].xm; // x coord of left side of first vertical rod
 
-            var len = rod.length - (j==heldRod); // if a disk is held, it should should be drawn at mouse position
-            // if a disk is held, it will be the top of the rod, so we ignore that rod. 
+            var len = rod.length - (j==heldRod || j==animRod); // if a disk is held, it should should be drawn at mouse position
+            // if a disk is held, it will be the top of the rod, so we ignore that rod. same log if the disk is begin animated(while solving)
             for (i=0; i<len; i++) {
                 ctx.fillStyle = colors[(rod[i]-1)%colors.length];
                 ctx.fillRect(mid-rod[i]*diskLen, rodsBasePos[j].y-(i+1)*diskWidth, rod[i]*diskLen*2+rodWidth, diskWidth)
             }
         }
+        // for held disk (click and hold to move)
         if (heldRod!=null) {
             var heldDiskTotLen = heldDiskVal*2*diskLen+rodWidth; // total disk length of the held disk
             ctx.fillStyle = colors[(heldDiskVal-1)%colors.length];
             ctx.fillRect(heldRodPos.x, heldRodPos.y, heldDiskTotLen, diskWidth);
+        }
+        // for animating block (while solving)
+        else if (animRod != null) {
+            var animDiskTotLen = animDiskVal*2*diskLen+rodWidth; // total disk length of the anim disk
+            ctx.fillStyle = colors[(animDiskVal-1)%colors.length];
+            ctx.fillRect(animDiskPos.x, animDiskPos.y, animDiskTotLen, diskWidth);
         }
     }
     
@@ -80,6 +107,18 @@ document.addEventListener("DOMContentLoaded", function(e){
     function canvasMainLoop() {
         clearCanvas();
         drawRods();
+        if (isAnimating) {
+            animDiskPos.x = animDiskSrcPos.x + (animDiskDestPos.x - animDiskSrcPos.x)*(Date.now()-animStartTime)/animTime;
+            animDiskPos.y = animDiskSrcPos.y + (animDiskDestPos.y - animDiskSrcPos.y)*(Date.now()-animStartTime)/animTime;
+
+            if (Date.now()-animStartTime>animTime) {
+                animDiskPos.x = animDiskDestPos.x;
+                animDiskPos.y = animDiskDestPos.y;
+                rods[1].push(rods[0].pop());
+                nullifyAnimAtributes();
+            }
+            console.log(animDiskPos);
+        }
         drawDisks();
         requestAnimationFrame(canvasMainLoop);
     }
@@ -108,6 +147,8 @@ document.addEventListener("DOMContentLoaded", function(e){
         moves = 0;
         updateMovesOnScreen();
         wellDoneTxtElt.innerText = " ";
+
+        nullifyAnimAtributes();
     }
     document.getElementById("resetButton").onclick = resetGame;
 
@@ -144,12 +185,13 @@ document.addEventListener("DOMContentLoaded", function(e){
         return false;
     }
     
-    function isGameComplete() {
+    function isGameComplete() { // checks whether the game is completed
         if (rods[0].length==0 && rods[1].length==0 && rods[2].length==nDisks) return true;
         return false;
     }
 
     canvas.addEventListener("mousedown", function(e) {
+        if (isAnimating) return;
         var mx = e.clientX - canvas.getBoundingClientRect().left;
         var my = e.clientY - canvas.getBoundingClientRect().top;
         console.log(mx, my);
@@ -169,6 +211,7 @@ document.addEventListener("DOMContentLoaded", function(e){
     })
 
     canvas.addEventListener("mousemove", function(e) {
+        if (isAnimating) return;
         var mx = e.clientX - canvas.getBoundingClientRect().left;
         var my = e.clientY - canvas.getBoundingClientRect().top;
         if (heldRod != null) {
@@ -178,6 +221,7 @@ document.addEventListener("DOMContentLoaded", function(e){
     })
 
     canvas.addEventListener("mouseup", function(e) {
+        if (isAnimating) return;
         var mx = e.clientX - canvas.getBoundingClientRect().left;
         var my = e.clientY - canvas.getBoundingClientRect().top;
         if (heldRod === null) return;
@@ -194,5 +238,21 @@ document.addEventListener("DOMContentLoaded", function(e){
         heldRod = null;
         heldDiskVal = null;
         heldRodPos = null;
+    })
+
+    document.addEventListener("keydown", function(e){
+        if (e.key === "Enter") {
+            debugger;
+            isAnimating = true;
+            animStartTime = Date.now();
+            animRod = 0;
+            animDiskVal = rods[animRod].at(-1);
+            animDiskSrcPos = {x: rodsBasePos[animRod].xm-animDiskVal*diskLen, 
+                            y: rodsBasePos[animRod].y-rods[0].length*diskWidth };
+            animDiskPos = {x: rodsBasePos[animRod].xm-animDiskVal*diskLen, 
+                            y: rodsBasePos[animRod].y-rods[0].length*diskWidth };
+            animDiskDestPos = {x: rodsBasePos[1].xm -animDiskVal*diskLen,
+                            y: rodsBasePos[1].y-diskWidth};
+        }
     })
 })
