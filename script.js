@@ -5,6 +5,16 @@ function getRandValue(min, max) {
 document.addEventListener("DOMContentLoaded", function(e){
     var wellDoneTxtElt = document.getElementById("wellDoneText"); // 'Elt' for 'element'
     var disksTxtElt = document.getElementById("disksText");
+    var speedSlider = document.getElementById("speedSlider");
+    function showSpeedSlider() {
+        speedSlider.style.visibility = "visible";
+    }
+    function hideSpeedSlider() {
+        speedSlider.style.visibility = "hidden";
+    }
+    hideSpeedSlider();
+
+    // ---------------------  Canvas -----------------------------
     var canvas = document.getElementById("myCanvas");
     var ctx = canvas.getContext('2d');
 
@@ -109,6 +119,7 @@ document.addEventListener("DOMContentLoaded", function(e){
 
     function setupSolveHanoi() {
         resetGame();
+        showSpeedSlider();
         isSolving = true;
         solveStack.length = 0; 
         function generateSolveStack(n, srcRod, auxRod, destRod) {
@@ -125,7 +136,7 @@ document.addEventListener("DOMContentLoaded", function(e){
     }
     document.getElementById("solveButton").onclick = setupSolveHanoi;
 
-    const colors = ['red', 'blue', 'orange', 'yellow']
+    const colors = ['red', 'blue', 'orange', 'yellow', 'green']
     function drawDisks() {
         for(j=0; j<rods.length; j++) {
             const rod = rods[j];
@@ -168,6 +179,7 @@ document.addEventListener("DOMContentLoaded", function(e){
                 animDiskPos.x = animDiskDestPos.x;
                 animDiskPos.y = animDiskDestPos.y;
                 rods[animDestRod].push(rods[animSrcRod].pop());
+                increaseMoves();
                 if (solveStack.length>0) {
                     var move = solveStack.pop();
                     console.log(move);
@@ -176,6 +188,7 @@ document.addEventListener("DOMContentLoaded", function(e){
                 else {
                     isSolving = false;
                     nullifyAnimAtributes();
+                    hideSpeedSlider();
                 }
             }
         }
@@ -253,7 +266,7 @@ document.addEventListener("DOMContentLoaded", function(e){
     }
 
     canvas.addEventListener("mousedown", function(e) {
-        if (isAnimating) return;
+        if (isSolving || isAnimating) return;
         var mx = e.clientX - canvas.getBoundingClientRect().left;
         var my = e.clientY - canvas.getBoundingClientRect().top;
         // console.log(mx, my);
@@ -273,7 +286,7 @@ document.addEventListener("DOMContentLoaded", function(e){
     })
 
     canvas.addEventListener("mousemove", function(e) {
-        if (isAnimating) return;
+        if (isSolving || isAnimating) return;
         var mx = e.clientX - canvas.getBoundingClientRect().left;
         var my = e.clientY - canvas.getBoundingClientRect().top;
         if (heldRod != null) {
@@ -283,7 +296,7 @@ document.addEventListener("DOMContentLoaded", function(e){
     })
 
     canvas.addEventListener("mouseup", function(e) {
-        if (isAnimating) return;
+        if (isSolving || isAnimating) return;
         var mx = e.clientX - canvas.getBoundingClientRect().left;
         var my = e.clientY - canvas.getBoundingClientRect().top;
         if (heldRod === null) return;
@@ -307,4 +320,8 @@ document.addEventListener("DOMContentLoaded", function(e){
             setupSolveHanoi();
         }
     })
+
+    speedSlider.oninput = function() {
+        animTime = parseInt(this.value, 10)*10;
+    }
 })
