@@ -6,6 +6,16 @@ body {
 }
 
 .main-container {
+    text-align: center;
+}
+
+.heading {
+    margin-bottom: 0px;
+    padding-bottom: 0px;
+    color: rgb(21, 151, 232);
+}
+
+.canvas-container {
     margin-top: 40px;
     position: relative;
 }
@@ -82,4 +92,14 @@ button {
     top: 50px;
     left: 235px;
     color: #8ABFA3;
+}
+
+#minMovesText {
+    margin: 0;
+    color: rgb(165, 167, 152);
+    z-index: 10;
+    position: absolute;
+    font-size: 16px;
+    bottom: -20px;
+    right: 20px;
 }

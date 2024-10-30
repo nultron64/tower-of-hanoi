@@ -9,15 +9,19 @@
 </head>
 <body>
     <div class="main-container">
-        <p id="disksText">Disks: 3</p>
-        <button class="on-top-canvas" id="resetButton">Reset</button>
-        <button class="on-top-canvas" id="solveButton">Solve</button>
-        <button class="on-top-canvas" id="increaseButton">+</button>
-        <button class="on-top-canvas" id="decreaseButton">-</button>
-        <input type="range" class="on-top-canvas" id="speedSlider" min="10" max="150" value="100" step="1">
-        <p class="on-top-canvas" id="movesText">Moves: 0</p>
-        <p class="on-top-canvas" id="wellDoneText"> </p>
-        <canvas id="myCanvas" width="600px" height="400px"></canvas>
+        <h1 class="heading">Tower of Hanoi</h1>
+        <div class="canvas-container">
+            <p id="disksText">Disks: 3</p>
+            <button class="on-top-canvas" id="resetButton">Reset</button>
+            <button class="on-top-canvas" id="solveButton">Solve</button>
+            <button class="on-top-canvas" id="increaseButton">+</button>
+            <button class="on-top-canvas" id="decreaseButton">-</button>
+            <input type="range" class="on-top-canvas" id="speedSlider" min="10" max="150" value="100" step="1">
+            <p class="on-top-canvas" id="movesText">Moves: 0</p>
+            <p class="on-top-canvas" id="wellDoneText"> </p>
+            <canvas id="myCanvas" width="600px" height="400px"></canvas>
+            <p class="on-top-canvas" id="minMovesText">Minimum Moves: 7</p>
+        </div>
     </div>
 </body>
 </html>

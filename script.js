@@ -4,6 +4,7 @@ function getRandValue(min, max) {
 
 document.addEventListener("DOMContentLoaded", function(e){
     var wellDoneTxtElt = document.getElementById("wellDoneText"); // 'Elt' for 'element'
+    var minMovesTxtElt = document.getElementById("minMovesText");
     var disksTxtElt = document.getElementById("disksText");
     var speedSlider = document.getElementById("speedSlider");
     function showSpeedSlider() {
@@ -220,6 +221,7 @@ document.addEventListener("DOMContentLoaded", function(e){
         moves = 0;
         updateMovesOnScreen();
         wellDoneTxtElt.innerText = " ";
+        minMovesTxtElt.innerText = "Minimum Moves: "+String(Math.pow(2, nDisks)-1);
 
         nullifyAnimAtributes();
 
