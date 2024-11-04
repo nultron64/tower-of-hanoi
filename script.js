@@ -19,11 +19,18 @@ document.addEventListener("DOMContentLoaded", function(e){
     var canvas = document.getElementById("myCanvas");
     var ctx = canvas.getContext('2d');
 
+    function drawRoundRect(x, y, width, height, radius=7) {
+        ctx.beginPath();
+        ctx.roundRect(x, y, width, height, radius);
+        ctx.closePath()
+        ctx.fill()
+    }
+
     // rod atributes
-    const rodBaseLen = 160;
-    const rodsGap = 20;
-    const rodWidth = 15;
-    const rodHeight = 200;
+    const rodBaseLen = 170;
+    const rodsGap = 15;
+    const rodWidth = 12;
+    const rodHeight = 180;
     const rodsBasePos = [] // rod base positions. array of objects. each object => (.x : left x) (.y : left y) (.xm = middle x (not actuall middle, it's left of middle rod))
     // precalculating the required values for positioning the rods
     for(var i=0; i<3; i++) {
@@ -42,10 +49,11 @@ document.addEventListener("DOMContentLoaded", function(e){
         // horizontal base disks
         for (var i=0; i<3; i++) {
             // horizontal rod
-            ctx.fillRect(rodsBasePos[i].x, rodsBasePos[i].y, rodBaseLen, rodWidth);
+            var radius = 7;
+            drawRoundRect(rodsBasePos[i].x, rodsBasePos[i].y, rodBaseLen, rodWidth, radius);
 
             // vertical rod
-            ctx.fillRect(rodsBasePos[i].xm, rodsBasePos[i].y-rodHeight, rodWidth, rodHeight)
+            drawRoundRect(rodsBasePos[i].xm, rodsBasePos[i].y-rodHeight, rodWidth, rodHeight+rodWidth, radius)
         }
     }
 
@@ -137,7 +145,7 @@ document.addEventListener("DOMContentLoaded", function(e){
     }
     document.getElementById("solveButton").onclick = setupSolveHanoi;
 
-    const colors = ['red', 'blue', 'orange', 'yellow', 'green']
+    const colors = ['red', 'blue', 'green', 'yellow', 'orange', 'purple', 'teal']
     function drawDisks() {
         for(j=0; j<rods.length; j++) {
             const rod = rods[j];
@@ -147,20 +155,20 @@ document.addEventListener("DOMContentLoaded", function(e){
             // if a disk is held, it will be the top of the rod, so we ignore that rod. same logic if the disk is begin animated(while solving)
             for (i=0; i<len; i++) {
                 ctx.fillStyle = colors[(rod[i]-1)%colors.length];
-                ctx.fillRect(mid-rod[i]*diskLen, rodsBasePos[j].y-(i+1)*diskWidth, rod[i]*diskLen*2+rodWidth, diskWidth)
+                drawRoundRect(mid-rod[i]*diskLen, rodsBasePos[j].y-(i+1)*diskWidth, rod[i]*diskLen*2+rodWidth, diskWidth)
             }
         }
         // for held disk (click and hold to move)
         if (heldRod!=null) {
             var heldDiskTotLen = heldDiskVal*2*diskLen+rodWidth; // total disk length of the held disk
             ctx.fillStyle = colors[(heldDiskVal-1)%colors.length];
-            ctx.fillRect(heldRodPos.x, heldRodPos.y, heldDiskTotLen, diskWidth);
+            drawRoundRect(heldRodPos.x, heldRodPos.y, heldDiskTotLen, diskWidth);
         }
         // for animating block (while solving)
         else if (animSrcRod != null) {
             var animDiskTotLen = animDiskVal*2*diskLen+rodWidth; // total disk length of the anim disk
             ctx.fillStyle = colors[(animDiskVal-1)%colors.length];
-            ctx.fillRect(animDiskPos.x, animDiskPos.y, animDiskTotLen, diskWidth);
+            drawRoundRect(animDiskPos.x, animDiskPos.y, animDiskTotLen, diskWidth);
         }
     }
     
